@@ -4,9 +4,11 @@ library(xgboost)
 library(Matrix)
 
 # load data
-suppressWarnings(data <- fread("/home/rstudio/Santendar/indat/train_ver2.csv"))
+#suppressWarnings(data <- fread("/home/rstudio/Santendar/indat/train_ver2.csv"))
+suppressWarnings(data <- fread("../indat/train_ver2.csv"))
 data[, submission := FALSE]
-suppressWarnings(data_test <- fread('/home/rstudio/Santendar/indat/test_ver2.csv'))
+#suppressWarnings(data_test <- fread('/home/rstudio/Santendar/indat/test_ver2.csv'))
+suppressWarnings(data_test <- fread('../indat/test_ver2.csv'))
 data_test[, submission := TRUE]
 data <- rbind(data, data_test, fill = TRUE)
 data[, ':='(fecha_dato = as.Date(fecha_dato), fecha_alta = as.Date(fecha_alta))]
@@ -178,3 +180,98 @@ MAP <- function(recom, data_list, at = 7) {
 cat('MAP@7:', MAP(recom, test_list) * positive_m_frac, "\n")
 
 
+
+## output submission file
+# check data
+melt_data[submission==TRUE, ]
+melt_label[submission==TRUE, ]  ## 0 obs
+melt_num[submission==TRUE, ]
+
+# prepair data for submission
+submit_obs <- which(melt_data$submission==TRUE)
+
+submit_list <- get_data(melt_data[submit_obs], train_list$label_coding)
+
+submit <- xgb.DMatrix(data = submit_list$data, label = submit_list$label)
+
+recom_submit <- recommend(submit, submit_list$rows)
+
+# ##function 'recommend'
+# #recommend <- function(data, rows) {
+#   pred <- predict(model, submit)
+#   pred <- matrix(pred, ncol = n_class, byrow = TRUE)
+#   recom <- t(apply(pred, 1, order, decreasing = TRUE)) - 1
+#   recom <- cbind(rows[,.(fecha_dato, ncodpers)], data.table(recom))
+#   # if there are multiple rows for one customer - take first one (all are the same)
+#   recom <- recom[, lapply(.SD, '[', 1), by = list(fecha_dato, ncodpers)] 
+#   return(recom)
+# #}
+
+# ## function 'MAP'
+# # calculate MAP@7
+# #MAP <- function(recom, data_list, at = 7) {
+# at = 7
+#   real <- submit_list$rows
+#   joy <- real[recom,,on = c('fecha_dato', 'ncodpers')]
+#   rec_cols <- setdiff(colnames(recom), c('fecha_dato', 'ncodpers'))[1:at]
+#   labels <- joy$label
+#   hits <- joy[, lapply(.SD, '==', labels), .SDcols = rec_cols]
+#   hits <- cbind(joy[,.(fecha_dato, ncodpers)], hits)
+#   hits <- hits[,lapply(lapply(.SD, sum), '/', .N),by = list(fecha_dato, ncodpers)]
+#   mat <- as.matrix(hits[,.SD,.SDcols = rec_cols])
+#   mat <- t(apply(mat,1, cumsum)) * (mat > 0)
+#   mat <- mat / matrix(1:at, ncol = at, nrow = nrow(mat), byrow = TRUE)
+#   sum(mat)/nrow(mat)
+# #  return(sum(mat)/nrow(mat))
+# #}
+
+## convert labels to product names
+recom_prod <- recom_submit[, c('fecha_dato', 'ncodpers')]
+#for (i in 1){#n_class){
+#  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, (i+1)])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[,  3])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[,  4])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[,  5])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[,  6])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[,  7])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[,  8])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[,  9])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 10])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 11])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 12])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 13])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 14])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 15])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 16])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 17])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 18])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 19])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 20])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 21])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 22])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 23])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 24])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 25])+1]))
+  recom_prod <- cbind(recom_prod, as.data.table(prod_cols[as.matrix(recom_submit[, 26])+1]))
+  colnames(recom_prod)[3:26] <- as.vector(sapply("added_products", paste0, 1:24))
+#}
+recom_prod
+
+
+## output submit file
+write.table(recom_prod[,3:9], "recom_prod.txt", quote=FALSE, sep=" ", row.names=FALSE, col.names=FALSE)
+added_products <- fread("recom_prod.txt", sep=",", head=FALSE)
+colnames(added_products) <- "added_products"
+submit_file = cbind(recom_submit[, "ncodpers"], added_products)
+head(submit_file)
+write.csv(submit_file, "../submit/submit_20161211.csv", quote=FALSE, row.names=FALSE)
+
+
+
+# at <- 7
+# #paste(recom_prod[1:10, 3], recom_prod[1:10, 4], recom_prod[1:10, 5], recom_prod[1:10, 6], recom_prod[1:10, 7], recom_prod[1:10, 8], recom_prod[1:10, 9], sep=" ")
+# added_products = NULL
+# #for(i in 1:nrow(recom_prod)){
+# for(i in 1:nrow(recom_prod)){
+#     added_products = rbind(added_products, paste(recom_prod[i, 3], recom_prod[i, 4], recom_prod[i, 5], recom_prod[i, 6], recom_prod[i, 7], recom_prod[i, 8], recom_prod[i, 9], sep=" "))
+# }
