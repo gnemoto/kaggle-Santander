@@ -1,2 +1,3 @@
 # kaggle-Santander
-for kaggle Santander's competition
+for kaggle's Santander competition
+https://www.kaggle.com/c/santander-product-recommendation
