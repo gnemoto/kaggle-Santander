@@ -216,6 +216,7 @@ submit <- xgb.DMatrix(data = submit_list$data, label = submit_list$label)
 
 #recom_submit <- recommend(submit, submit_list$rows)
 recom_submit <- recommend2(submit, submit_list$rows, 0.2)
+head(recom_submit)
 
 # ##function 'recommend'
 # #recommend <- function(data, rows) {
@@ -282,15 +283,14 @@ library(stringr)
 ## output submit file
 write.table(recom_prod[,3:9], "recom_prod.txt", quote=FALSE, sep=" ", row.names=FALSE, col.names=FALSE)
 added_products <- fread("recom_prod.txt", sep=",", head=FALSE)
-
-temp <- gsub("NA ", "", added_products$V1)
-temp <- gsub("NA", "", temp)
-added_products$V1 <- str_trim(temp)
+added_products$V1 <- gsub(" NA", "", added_products$V1)
+added_products$V1 <- gsub("NA", "", added_products$V1)
+added_products$V1
 
 colnames(added_products) <- "added_products"
 submit_file = cbind(recom_submit[, "ncodpers"], added_products)
 head(submit_file)
-write.csv(submit_file, "../submit/submit_20161215_cri0.1.csv", quote=FALSE, row.names=FALSE)
+write.csv(submit_file, "../submit/submit_20161216_01_cri0.2.csv", quote=FALSE, row.names=FALSE)
 
 
 
