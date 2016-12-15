@@ -159,15 +159,18 @@ recommend <- function(data, rows) {
   
   return(recom)
 }
-recommend2 <- function(data, rows, criterion=0.2) {
+recommend2 <- function(data, rows, criterion=0.2, cumsum=FALSE) {
   pred <- predict(model, data)
   pred <- matrix(pred, ncol = n_class, byrow = TRUE)
-  # remain prods these probabilities are over criterion 
-  for (i in 1:n_class){ 
-    pred[,i] <- ifelse(pred[,i]>criterion, pred[,i], NA)
-  }
+  pred.sorted = t(apply(pred, 1, sort, decreasing = TRUE))
   recom <- t(apply(pred, 1, order, decreasing = TRUE)) - 1
-#  recom <- t(apply(pred, 1, order, decreasing = TRUE, na.last=NA)) - 1
+  # remain prods these probabilities are over criterion 
+  if(!cumsum){
+    recom <- ifelse(pred.sorted>criterion, recom, NA)
+  }else{
+    pred.cumsum <- t(apply(pred.sorted, 1, cumsum))
+    recom <- ifelse(pred.cumsum<criterion, recom, NA)
+  }
   recom <- cbind(rows[,.(fecha_dato, ncodpers)], data.table(recom))
   # if there are multiple rows for one customer - take first one (all are the same)
   recom <- recom[, lapply(.SD, '[', 1), by = list(fecha_dato, ncodpers)] 
@@ -176,7 +179,8 @@ recommend2 <- function(data, rows, criterion=0.2) {
 }
 
 #recom <- recommend(test, test_list$rows)
-recom <- recommend2(test, test_list$rows, 0.1)
+recom <- recommend2(test, test_list$rows, 0.2, FALSE)
+head(recom)
 
 # calculate MAP@7
 MAP <- function(recom, data_list, at = 7) {
@@ -210,10 +214,8 @@ submit_list <- get_data(melt_data[submit_obs], train_list$label_coding)
 
 submit <- xgb.DMatrix(data = submit_list$data, label = submit_list$label)
 
-pred <- predict(model, submit)
-pred <- matrix(pred, ncol = n_class, byrow = TRUE)
 #recom_submit <- recommend(submit, submit_list$rows)
-recom_submit <- recommend2(submit, submit_list$rows, 0.1)
+recom_submit <- recommend2(submit, submit_list$rows, 0.2)
 
 # ##function 'recommend'
 # #recommend <- function(data, rows) {
