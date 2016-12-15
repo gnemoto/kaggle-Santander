@@ -159,8 +159,24 @@ recommend <- function(data, rows) {
   
   return(recom)
 }
+recommend2 <- function(data, rows, criterion=0.2) {
+  pred <- predict(model, data)
+  pred <- matrix(pred, ncol = n_class, byrow = TRUE)
+  # remain prods these probabilities are over criterion 
+  for (i in 1:n_class){ 
+    pred[,i] <- ifelse(pred[,i]>criterion, pred[,i], NA)
+  }
+  recom <- t(apply(pred, 1, order, decreasing = TRUE)) - 1
+#  recom <- t(apply(pred, 1, order, decreasing = TRUE, na.last=NA)) - 1
+  recom <- cbind(rows[,.(fecha_dato, ncodpers)], data.table(recom))
+  # if there are multiple rows for one customer - take first one (all are the same)
+  recom <- recom[, lapply(.SD, '[', 1), by = list(fecha_dato, ncodpers)] 
+  
+  return(recom)
+}
 
-recom <- recommend(test, test_list$rows)
+#recom <- recommend(test, test_list$rows)
+recom <- recommend2(test, test_list$rows, 0.1)
 
 # calculate MAP@7
 MAP <- function(recom, data_list, at = 7) {
@@ -194,7 +210,10 @@ submit_list <- get_data(melt_data[submit_obs], train_list$label_coding)
 
 submit <- xgb.DMatrix(data = submit_list$data, label = submit_list$label)
 
-recom_submit <- recommend(submit, submit_list$rows)
+pred <- predict(model, submit)
+pred <- matrix(pred, ncol = n_class, byrow = TRUE)
+#recom_submit <- recommend(submit, submit_list$rows)
+recom_submit <- recommend2(submit, submit_list$rows, 0.1)
 
 # ##function 'recommend'
 # #recommend <- function(data, rows) {
@@ -257,14 +276,19 @@ recom_prod <- recom_submit[, c('fecha_dato', 'ncodpers')]
 #}
 recom_prod
 
-
+library(stringr)
 ## output submit file
 write.table(recom_prod[,3:9], "recom_prod.txt", quote=FALSE, sep=" ", row.names=FALSE, col.names=FALSE)
 added_products <- fread("recom_prod.txt", sep=",", head=FALSE)
+
+temp <- gsub("NA ", "", added_products$V1)
+temp <- gsub("NA", "", temp)
+added_products$V1 <- str_trim(temp)
+
 colnames(added_products) <- "added_products"
 submit_file = cbind(recom_submit[, "ncodpers"], added_products)
 head(submit_file)
-write.csv(submit_file, "../submit/submit_20161211.csv", quote=FALSE, row.names=FALSE)
+write.csv(submit_file, "../submit/submit_20161215_cri0.1.csv", quote=FALSE, row.names=FALSE)
 
 
 
