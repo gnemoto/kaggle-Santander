@@ -179,7 +179,8 @@ recommend2 <- function(data, rows, criterion=0.2, cumsum=FALSE) {
 }
 
 #recom <- recommend(test, test_list$rows)
-recom <- recommend2(test, test_list$rows, 0.2, FALSE)
+#recom <- recommend2(test, test_list$rows, 0.005, FALSE)
+recom <- recommend2(test, test_list$rows, 0.9, TRUE)
 head(recom)
 
 # calculate MAP@7
@@ -189,6 +190,8 @@ MAP <- function(recom, data_list, at = 7) {
   rec_cols <- setdiff(colnames(recom), c('fecha_dato', 'ncodpers'))[1:at]
   labels <- joy$label
   hits <- joy[, lapply(.SD, '==', labels), .SDcols = rec_cols]
+  ## convert NA to FALSE
+  hits <- t(apply(hits, 1, function(x){ifelse(is.na(x), FALSE, x)}))
   hits <- cbind(joy[,.(fecha_dato, ncodpers)], hits)
   hits <- hits[,lapply(lapply(.SD, sum), '/', .N),by = list(fecha_dato, ncodpers)]
   mat <- as.matrix(hits[,.SD,.SDcols = rec_cols])
